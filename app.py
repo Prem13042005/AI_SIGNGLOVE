@@ -10,10 +10,9 @@ load_dotenv()
 
 # Flask config 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-app = Flask(__name__, static_folder="static", template_folder="templates")
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change-this-in-production')
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///signglove.db")
+app = Flask(__name__, static_folder="static", template_folder="templates")
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
