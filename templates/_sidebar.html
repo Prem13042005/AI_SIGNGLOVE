@@ -1,0 +1,25 @@
+<script src="{{ url_for('static', filename='js/apply_settings.js') }}" defer></script>
+
+<i class="fa-solid fa-bars menu-toggle"></i>
+<div class="sidebar">
+  <div class="nav">
+    <a href="{{ url_for('live_translation') }}" {% if request.endpoint == 'live_translation' %}class="active"{% endif %}>
+      <i class="fa-solid fa-microphone"></i><span>Live Translation</span>
+    </a>
+    <a href="{{ url_for('analytics') }}" {% if request.endpoint == 'analytics' %}class="active"{% endif %}>
+      <i class="fa-solid fa-chart-line"></i><span>Analytics</span>
+    </a>
+    <a href="{{ url_for('history_page') }}" {% if request.endpoint == 'history_page' %}class="active"{% endif %}>
+      <i class="fa-solid fa-clock-rotate-left"></i><span>History</span>
+    </a>
+    <a href="{{ url_for('profile') }}" {% if request.endpoint == 'profile' %}class="active"{% endif %}>
+      <i class="fa-solid fa-user"></i><span>Profile</span>
+    </a>
+    <a href="{{ url_for('settings') }}" {% if request.endpoint == 'settings' %}class="active"{% endif %}>
+      <i class="fa-solid fa-gear"></i><span>Settings</span>
+    </a>
+    <a href="{{ url_for('signout') }}">
+      <i class="fa-solid fa-right-from-bracket"></i><span>Sign Out</span>
+    </a>
+  </div>
+</div>

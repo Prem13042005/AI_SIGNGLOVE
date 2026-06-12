@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In | SignGlove AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/signin.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <div class="signin-container">
+    <div class="logo">
+      <i class="fa-solid fa-hands fa-2x"></i>
+      <span>SignGlove AI</span>
+    </div>
+
+    <div class="signin-card">
+      <h2>Welcome back</h2>
+      <p class="subtitle">Sign in to your account to continue</p>
+
+      {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+      {% endif %}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <!-- FIX: method POST + action + name attributes on every input -->
+      <form method="POST" action="{{ url_for('signin') }}">
+        <div class="input-group">
+          <i class="fa-solid fa-envelope"></i>
+          <input type="email" name="email" placeholder="Enter your email" required>
+        </div>
+
+        <div class="input-group">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" name="password" id="password" placeholder="Enter your password" required>
+          <i class="fa-solid fa-eye toggle-password" data-target="password"></i>
+        </div>
+
+        <div class="options">
+          <label><input type="checkbox"> Remember me</label>
+          <a href="#" class="forgot">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn">Sign In</button>
+      </form>
+
+      <p class="footer-text">
+        Don't have an account? <a href="{{ url_for('signup') }}">Sign Up</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/signin.js') }}"></script>
+</body>
+</html>

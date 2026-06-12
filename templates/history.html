@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>History | SignGlove AI</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/Sidebar.css') }}">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f5fb; color: #333; }
+    .main { margin-left: 60px; padding: 30px 28px; transition: margin-left .3s; }
+
+    .page-title { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+    .page-sub   { color: #888; font-size: 14px; margin-top: 4px; margin-bottom: 24px; }
+
+    /* Stat cards */
+    .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card {
+      background: #fff; border-radius: 12px; padding: 18px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05); text-align: center;
+    }
+    .stat-card .val { font-size: 24px; font-weight: 800; color: #5a31f4; }
+    .stat-card .lbl { font-size: 12px; color: #888; margin-top: 4px; }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex; gap: 10px; align-items: center;
+      background: #fff; border-radius: 10px; padding: 10px 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.05); margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .toolbar input {
+      border: none; outline: none; flex: 1; font-size: 14px; color: #333;
+      min-width: 160px;
+    }
+    .toolbar i { color: #aaa; }
+    .toolbar-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: 8px;
+      text-decoration: none; font-size: 13px; font-weight: 600;
+      border: none; cursor: pointer; white-space: nowrap;
+    }
+    .btn-primary  { background: #5a31f4; color: #fff; }
+    .btn-outline  { background: #f0ebff; color: #5a31f4; }
+
+    /* Live indicator */
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #1e8449;
+      display: inline-block; margin-right: 4px;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    .live-dot.paused { background: #aaa; animation: none; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+    /* Filter pills */
+    .filter-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .pill {
+      padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      cursor: pointer; border: 1px solid #e0e0e0; background: #fff; color: #555;
+      transition: all .2s;
+    }
+    .pill.active { background: #5a31f4; color: #fff; border-color: #5a31f4; }
+
+    /* Timeline */
+    .timeline {
+      background: #fff; border-radius: 14px; padding: 22px 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    }
+    .timeline-title {
+      font-size: 15px; font-weight: 700; color: #1a1a2e;
+      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+    }
+    .timeline-title i { color: #5a31f4; }
+
+    .entry {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 0; border-bottom: 1px solid #f0f0f0;
+      animation: fadeIn .25s ease;
+    }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+    .entry:last-child { border-bottom: none; }
+    .entry-left { display: flex; align-items: center; gap: 14px; }
+    .entry-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: #f0ebff; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .entry-icon i { color: #5a31f4; font-size: 15px; }
+    .entry-text  { font-size: 15px; font-weight: 600; color: #1a1a2e; }
+    .entry-meta  { font-size: 12px; color: #999; margin-top: 3px; }
+    .conf-badge {
+      padding: 2px 9px; border-radius: 12px; font-size: 11px; font-weight: 600;
+    }
+    .conf-high   { background: #e8f8f0; color: #1e8449; }
+    .conf-medium { background: #fef9e7; color: #b7770d; }
+    .conf-low    { background: #fde8e8; color: #c0392b; }
+
+    .speak-btn {
+      background: none; border: none; cursor: pointer;
+      color: #aaa; font-size: 16px; padding: 6px;
+      border-radius: 8px; transition: color .2s, background .2s;
+    }
+    .speak-btn:hover { color: #5a31f4; background: #f0ebff; }
+
+    .empty-msg {
+      text-align: center; padding: 40px; color: #bbb; font-size: 14px;
+    }
+    .empty-msg i { font-size: 32px; display: block; margin-bottom: 10px; }
+
+    .loading-row {
+      text-align: center; padding: 24px; color: #aaa; font-size: 14px;
+    }
+
+    @media (max-width: 700px) {
+      .stat-row { grid-template-columns: 1fr 1fr; }
+      .main { margin-left: 0; padding: 20px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  {% include '_sidebar.html' %}
+
+  <div class="main">
+    <div class="page-title">Translation History</div>
+    <div class="page-sub">Your past ISL translations — updates live</div>
+
+    <!-- Stats (updated by JS) -->
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="val" id="statTotal">—</div>
+        <div class="lbl">Total Shown</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" id="statAvgConf">—</div>
+        <div class="lbl">Avg Confidence</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" id="statAvgRt">—</div>
+        <div class="lbl">Avg Response</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" id="statLatest">—</div>
+        <div class="lbl">Latest</div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="searchInput" placeholder="Search translations…">
+
+      <!-- Live toggle -->
+      <button class="toolbar-btn btn-outline" id="liveToggleBtn" onclick="toggleLive()">
+        <span class="live-dot" id="liveDot"></span> Live Updates
+      </button>
+
+      <a href="{{ url_for('export_history') }}" class="toolbar-btn btn-primary">
+        <i class="fa-solid fa-download"></i> Export CSV
+      </a>
+    </div>
+
+    <!-- Filter pills -->
+    <div class="filter-row">
+      <span class="pill active" onclick="setFilter('all', this)">All</span>
+      <span class="pill" onclick="setFilter('English', this)">English</span>
+      <span class="pill" onclick="setFilter('Hindi', this)">Hindi</span>
+      <span class="pill" onclick="setFilter('Marathi', this)">Marathi</span>
+      <span class="pill" onclick="setFilter('high', this)">High Confidence</span>
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline">
+      <div class="timeline-title">
+        <i class="fa-solid fa-clock-rotate-left"></i> Translation Timeline
+      </div>
+      <div id="entryList">
+        <div class="loading-row"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allEntries   = [];
+    let activeFilter = 'all';
+    let liveEnabled  = true;
+    let liveInterval = null;
+
+    // ── Fetch & render ─────────────────────────────────────────────────────
+    async function fetchHistory() {
+      try {
+        const resp = await fetch('/api/history?limit=100');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        allEntries = data;
+        renderStats(data);
+        renderList(data);
+      } catch (e) {
+        console.error('History fetch error:', e);
+      }
+    }
+
+    function renderStats(entries) {
+      document.getElementById('statTotal').textContent = entries.length;
+
+      if (entries.length === 0) {
+        document.getElementById('statAvgConf').textContent = '—';
+        document.getElementById('statAvgRt').textContent   = '—';
+        document.getElementById('statLatest').textContent  = '—';
+        return;
+      }
+
+      const avgConf = entries.reduce((s, e) => s + e.confidence, 0) / entries.length;
+      const avgRt   = entries.reduce((s, e) => s + e.response_time, 0) / entries.length;
+
+      document.getElementById('statAvgConf').textContent = Math.round(avgConf) + '%';
+      document.getElementById('statAvgRt').textContent   = Math.round(avgRt) + 'ms';
+      document.getElementById('statLatest').textContent  = entries[0]?.translated_text || '—';
+    }
+
+    function getFiltered() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      return allEntries.filter(e => {
+        const matchSearch = e.translated_text.toLowerCase().includes(q);
+        let   matchFilter = true;
+        if (activeFilter === 'high')         matchFilter = e.confidence >= 85;
+        else if (activeFilter !== 'all')     matchFilter = e.language === activeFilter;
+        return matchSearch && matchFilter;
+      });
+    }
+
+    function renderList(entries) {
+      const filtered = getFiltered();
+      const list     = document.getElementById('entryList');
+
+      if (filtered.length === 0) {
+        list.innerHTML = `
+          <div class="empty-msg">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            ${allEntries.length === 0
+              ? 'No translations yet. Go to Live Translation to get started!'
+              : 'No entries match your search or filter.'}
+          </div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map(e => {
+        const confClass = e.confidence >= 85 ? 'conf-high' : e.confidence >= 65 ? 'conf-medium' : 'conf-low';
+        return `
+          <div class="entry" data-text="${e.translated_text.toLowerCase()}">
+            <div class="entry-left">
+              <div class="entry-icon"><i class="fa-solid fa-hands"></i></div>
+              <div>
+                <div class="entry-text">
+                  ${e.translated_text}
+                  <span class="conf-badge ${confClass}">${e.confidence}%</span>
+                </div>
+                <div class="entry-meta">
+                  <i class="fa-solid fa-language"></i> ${e.language} &nbsp;·&nbsp;
+                  <i class="fa-solid fa-clock"></i> ${e.timestamp} &nbsp;·&nbsp;
+                  ${e.response_time}ms
+                </div>
+              </div>
+            </div>
+            <button class="speak-btn" onclick="speak('${e.translated_text.replace(/'/g,"\\'")}', '${e.language}')">
+              <i class="fa-solid fa-volume-high"></i>
+            </button>
+          </div>`;
+      }).join('');
+    }
+
+    // ── Filters & search ───────────────────────────────────────────────────
+    function setFilter(filter, el) {
+      activeFilter = filter;
+      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      renderList(allEntries);
+    }
+
+    document.getElementById('searchInput').addEventListener('input', () => renderList(allEntries));
+
+    // ── Live toggle ────────────────────────────────────────────────────────
+    function startLive() {
+      liveEnabled  = true;
+      liveInterval = setInterval(fetchHistory, 5000);   // refresh every 5 s
+      document.getElementById('liveDot').classList.remove('paused');
+      document.getElementById('liveToggleBtn').innerHTML =
+        '<span class="live-dot" id="liveDot"></span> Live Updates';
+    }
+
+    function stopLive() {
+      liveEnabled = false;
+      clearInterval(liveInterval);
+      document.getElementById('liveDot').classList.add('paused');
+      document.getElementById('liveToggleBtn').innerHTML =
+        '<span class="live-dot paused" id="liveDot"></span> Paused';
+    }
+
+    function toggleLive() {
+      if (liveEnabled) stopLive(); else startLive();
+    }
+
+    // ── TTS ────────────────────────────────────────────────────────────────
+    speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+
+    function speak(text, language) {
+      const langMap    = { 'English': 'en-IN', 'Hindi': 'hi-IN', 'Marathi': 'mr-IN' };
+      const targetLang = langMap[language] || 'en-IN';
+      const voices     = speechSynthesis.getVoices();
+
+      let voice = voices.find(v => v.lang === targetLang)
+               || voices.find(v => v.lang.startsWith(targetLang.split('-')[0]))
+               || voices.find(v => v.lang.startsWith('en'));
+
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate  = 0.9;
+      if (voice) { utter.voice = voice; utter.lang = voice.lang; }
+      else        { utter.lang = 'en-IN'; }
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utter);
+    }
+
+    // ── Init ───────────────────────────────────────────────────────────────
+    fetchHistory();
+    startLive();
+  </script>
+</body>
+</html>

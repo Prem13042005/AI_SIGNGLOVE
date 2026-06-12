@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Translation | SignGlove AI</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/Sidebar.css') }}">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f5fb; color: #333; }
+    .main { margin-left: 60px; padding: 30px 28px; transition: margin-left .3s; }
+
+    .page-title { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+    .page-sub   { color: #888; font-size: 14px; margin-top: 4px; margin-bottom: 24px; }
+
+    .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+
+    .card {
+      background: #fff; border-radius: 14px; padding: 22px 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    }
+    .card-title {
+      font-size: 14px; font-weight: 700; color: #1a1a2e;
+      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+    }
+    .card-title i { color: #5a31f4; }
+
+    /* Gesture input box */
+    .gesture-box {
+      border: 2px dashed #d0c8f8; border-radius: 12px;
+      padding: 30px 20px; text-align: center; color: #aaa;
+      transition: border-color .3s, background .3s;
+      min-height: 160px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 10px;
+    }
+    .gesture-box.active { border-color: #5a31f4; background: #f7f5ff; }
+    .gesture-box i { font-size: 36px; color: #c0b8f0; }
+    .gesture-box.active i { color: #5a31f4; }
+    .gesture-box p { font-size: 14px; }
+
+    /* Unknown gesture warning */
+    .unknown-badge {
+      display: none; background: #fef9e7; color: #b7770d;
+      border: 1px solid #f9e79f; border-radius: 8px;
+      padding: 6px 12px; font-size: 12px; margin-top: 8px;
+      text-align: center;
+    }
+    .unknown-badge.show { display: block; }
+
+    /* Output box */
+    .output-box {
+      border: 2px solid #eee; border-radius: 12px;
+      padding: 20px; min-height: 160px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .output-text {
+      font-size: 28px; font-weight: 800; color: #5a31f4;
+      text-align: center; flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 80px;
+    }
+    .output-text.empty    { font-size: 15px; color: #ccc; font-weight: 400; }
+    .output-text.unknown  { font-size: 16px; color: #b7770d; font-weight: 600; }
+
+    select {
+      width: 100%; padding: 8px 12px; border: 1px solid #e0e0e0;
+      border-radius: 8px; font-size: 14px; color: #333;
+      margin-bottom: 10px;
+    }
+
+    /* Detect button */
+    .detect-btn {
+      width: 100%; padding: 11px;
+      background: linear-gradient(90deg, #5a31f4, #8c52ff);
+      color: #fff; border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      transition: opacity .2s, transform .1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .detect-btn:hover  { opacity: .9; }
+    .detect-btn:active { transform: scale(.98); }
+    .detect-btn.running { background: #e74c3c; }
+
+    .speak-btn {
+      width: 100%; padding: 9px;
+      background: #f0ebff; color: #5a31f4;
+      border: none; border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background .2s;
+    }
+    .speak-btn:hover { background: #e0d8ff; }
+
+    /* Stats row */
+    .stat-row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .stat-box {
+      flex: 1; min-width: 80px; background: #fff; border-radius: 12px;
+      padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    }
+    .stat-box .val { font-size: 20px; font-weight: 800; color: #5a31f4; }
+    .stat-box .lbl { font-size: 11px; color: #888; margin-top: 4px; }
+
+    /* Confidence bar */
+    .conf-bar-wrap { margin-top: 8px; }
+    .conf-label { font-size: 12px; color: #888; display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .conf-bar { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
+    .conf-fill { height: 100%; background: linear-gradient(90deg, #5a31f4, #8c52ff); border-radius: 3px; transition: width .4s; }
+    .conf-fill.low { background: #e74c3c; }
+    .conf-fill.mid { background: #f39c12; }
+
+    /* ── Sentence Builder ── */
+    .sentence-card { margin-bottom: 24px; }
+    .sentence-display {
+      min-height: 56px; padding: 14px 16px;
+      background: #f7f5ff; border-radius: 10px;
+      font-size: 22px; font-weight: 700; color: #5a31f4;
+      letter-spacing: 1px; margin-bottom: 12px;
+      word-break: break-word; line-height: 1.4;
+    }
+    .sentence-display.empty { color: #ccc; font-size: 16px; font-weight: 400; }
+
+    .sentence-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .sb-btn {
+      padding: 9px 16px; border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; gap: 6px; transition: opacity .2s;
+    }
+    .sb-btn:hover { opacity: .85; }
+    .sb-btn.primary { background: linear-gradient(90deg, #5a31f4, #8c52ff); color: #fff; }
+    .sb-btn.neutral { background: #f0f0f0; color: #555; }
+    .sb-btn.danger  { background: #fff; color: #e74c3c; border: 1px solid #e74c3c; }
+    .sb-btn.success { background: #e8f8f0; color: #1e8449; border: 1px solid #a9dfbf; }
+
+    /* Cooldown slider */
+    .cooldown-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-top: 12px; font-size: 13px; color: #888;
+    }
+    .cooldown-row input[type=range] { flex: 1; accent-color: #5a31f4; }
+    .cooldown-row span { min-width: 30px; color: #5a31f4; font-weight: 600; }
+
+    /* Word chips in sentence builder */
+    #wordChips { display: flex; flex-wrap: wrap; gap: 6px; min-height: 34px; margin-bottom: 10px; }
+    .chip {
+      padding: 4px 12px; background: #5a31f4; color: #fff;
+      border-radius: 20px; font-size: 14px; font-weight: 600;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .chip .rm { cursor: pointer; opacity: .7; font-size: 11px; }
+    .chip .rm:hover { opacity: 1; }
+
+    /* Save toast */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #1e8449; color: #fff; padding: 12px 20px;
+      border-radius: 10px; font-size: 14px; font-weight: 600;
+      opacity: 0; pointer-events: none; transition: opacity .3s; z-index: 9999;
+    }
+    .toast.show { opacity: 1; }
+
+    @media (max-width: 700px) {
+      .cards { grid-template-columns: 1fr; }
+      .main  { margin-left: 0; padding: 20px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  {% include '_sidebar.html' %}
+
+  <div class="main">
+    <div class="page-title">Live ISL Translation</div>
+    <div class="page-sub">Real-time Indian Sign Language → Text &amp; Speech</div>
+
+    <div class="cards">
+
+      <!-- Gesture Input -->
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-hand"></i> Gesture Input</div>
+
+        <div class="gesture-box" id="gestureBox">
+          <i class="fa-solid fa-hands" id="gestureIcon"></i>
+          <p id="gestureStatus">Click Start to begin detection</p>
+        </div>
+        <div class="unknown-badge" id="unknownBadge">
+          ⚠️ Gesture not recognised (confidence too low). Hold the gesture more steadily.
+        </div>
+
+        <br>
+        <button class="detect-btn" id="detectBtn" onclick="toggleDetection()">
+          <i class="fa-solid fa-play" id="btnIcon"></i>
+          <span id="btnText">Start Detection</span>
+        </button>
+      </div>
+
+      <!-- Output -->
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-volume-high"></i> Speech Output</div>
+
+        <select id="languageSelect">
+          <option value="English">English</option>
+          <option value="Hindi">Hindi</option>
+          <option value="Marathi">Marathi</option>
+        </select>
+        <div id="voiceWarning" style="display:none; font-size:12px; color:#b7770d;
+          background:#fef9e7; border:1px solid #f9e79f; border-radius:8px;
+          padding:8px 12px; margin-bottom:8px;"></div>
+
+        <div class="output-box">
+          <div class="output-text empty" id="outputText">Waiting for gesture...</div>
+        </div>
+
+        <div class="conf-bar-wrap">
+          <div class="conf-label">
+            <span>Confidence</span>
+            <span id="confPct">—</span>
+          </div>
+          <div class="conf-bar">
+            <div class="conf-fill" id="confFill" style="width:0%"></div>
+          </div>
+        </div>
+
+        <br>
+        <button class="speak-btn" id="speakBtn" onclick="speakOutput()" disabled>
+          <i class="fa-solid fa-volume-high"></i> Speak Again
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Sentence Builder ── -->
+    <div class="card sentence-card">
+      <div class="card-title"><i class="fa-solid fa-align-left"></i> Sentence Builder</div>
+
+      <!-- Word chips (each word removable) -->
+      <div id="wordChips"></div>
+
+      <!-- Full sentence display -->
+      <div class="sentence-display empty" id="sentenceDisplay">Your sentence will appear here…</div>
+
+      <div class="sentence-controls">
+        <button class="sb-btn primary" onclick="speakSentence()">
+          <i class="fa-solid fa-volume-high"></i> Speak
+        </button>
+        <button class="sb-btn success" onclick="saveSentence()" id="saveBtn">
+          <i class="fa-solid fa-floppy-disk"></i> Save to History
+        </button>
+        <button class="sb-btn danger" onclick="removeLastWord()">
+          <i class="fa-solid fa-delete-left"></i> Undo
+        </button>
+        <button class="sb-btn neutral" onclick="clearSentence()">
+          <i class="fa-solid fa-trash"></i> Clear
+        </button>
+        <!-- Punctuation quick-add -->
+        <button class="sb-btn neutral" onclick="addPunctuation('.')">.</button>
+        <button class="sb-btn neutral" onclick="addPunctuation(',')">,</button>
+        <button class="sb-btn neutral" onclick="addPunctuation('?')">?</button>
+        <button class="sb-btn neutral" onclick="addPunctuation('!')">!</button>
+      </div>
+
+      <!-- Cooldown slider: min time between word additions -->
+      <div class="cooldown-row">
+        <i class="fa-solid fa-hourglass-half"></i>
+        <span>Word cooldown:</span>
+        <input type="range" id="cooldownSlider" min="1" max="8" step="0.5" value="3"
+               oninput="updateCooldown(this.value)">
+        <span id="cooldownVal">3s</span>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="val" id="statCount">0</div>
+        <div class="lbl">Gestures Detected</div>
+      </div>
+      <div class="stat-box">
+        <div class="val" id="statTime">—</div>
+        <div class="lbl">Last Response Time</div>
+      </div>
+      <div class="stat-box">
+        <div class="val" id="statConf">—</div>
+        <div class="lbl">Last Confidence</div>
+      </div>
+      <div class="stat-box">
+        <div class="val" id="statLang">—</div>
+        <div class="lbl">Language</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toastMsg"></div>
+
+  <script>
+    // ── State ──────────────────────────────────────────────────────────────
+    let running       = false;
+    let interval      = null;
+    let count         = 0;
+    let lastText      = '';
+    let lastLang      = 'English';
+    let sentence      = [];           // array of word-strings
+    let cooldownMs    = 3000;         // default 3 s between word additions
+    let lastAddedAt   = 0;            // epoch ms of last addToSentence call
+
+    // FIX: track the last prediction timestamp from the server so we only
+    // add a word when a genuinely NEW prediction arrives, not on every poll tick.
+    let lastTimestamp = null;
+
+    // ── Cooldown ───────────────────────────────────────────────────────────
+    function updateCooldown(val) {
+      cooldownMs = parseFloat(val) * 1000;
+      document.getElementById('cooldownVal').textContent = val + 's';
+    }
+
+    // ── Sentence Builder ───────────────────────────────────────────────────
+    function renderSentence() {
+      const display = document.getElementById('sentenceDisplay');
+      const chips   = document.getElementById('wordChips');
+
+      if (sentence.length === 0) {
+        display.textContent = 'Your sentence will appear here…';
+        display.classList.add('empty');
+        chips.innerHTML = '';
+        return;
+      }
+
+      display.textContent = sentence.join(' ');
+      display.classList.remove('empty');
+
+      chips.innerHTML = sentence.map((w, i) =>
+        `<span class="chip">${w}<span class="rm" onclick="removeWord(${i})">✕</span></span>`
+      ).join('');
+    }
+
+    function addToSentence(word) {
+      if (!word || word === 'Unknown') return;
+      const now = Date.now();
+      if (now - lastAddedAt < cooldownMs) return;  // respect cooldown
+      lastAddedAt = now;
+      sentence.push(word);
+      renderSentence();
+    }
+
+    function addPunctuation(p) {
+      if (sentence.length === 0) return;
+      // Attach to the last word rather than adding a standalone punctuation chip
+      sentence[sentence.length - 1] += p;
+      renderSentence();
+    }
+
+    function removeWord(index) {
+      sentence.splice(index, 1);
+      renderSentence();
+    }
+
+    function removeLastWord() {
+      if (sentence.length === 0) return;
+      // If last word ends with punctuation, strip it first
+      const last = sentence[sentence.length - 1];
+      if (/[.,?!]$/.test(last)) {
+        sentence[sentence.length - 1] = last.slice(0, -1);
+        if (!sentence[sentence.length - 1]) sentence.pop();
+      } else {
+        sentence.pop();
+      }
+      renderSentence();
+    }
+
+    function clearSentence() {
+      sentence = [];
+      renderSentence();
+    }
+
+    function speakSentence() {
+      const text = sentence.join(' ');
+      if (text) speakText(text, document.getElementById('languageSelect').value);
+    }
+
+    async function saveSentence() {
+      const text = sentence.join(' ');
+      if (!text) { showToast('Nothing to save yet.', false); return; }
+
+      const lang = document.getElementById('languageSelect').value;
+      try {
+        const resp = await fetch('/api/save_sentence', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ sentence: text, language: lang })
+        });
+        if (resp.ok) {
+          showToast('✅ Sentence saved to history!', true);
+        } else {
+          showToast('❌ Could not save. Are you signed in?', false);
+        }
+      } catch (e) {
+        showToast('❌ Network error.', false);
+      }
+    }
+
+    // ── Toast ──────────────────────────────────────────────────────────────
+    function showToast(msg, success = true) {
+      const t = document.getElementById('toastMsg');
+      t.textContent = msg;
+      t.style.background = success ? '#1e8449' : '#c0392b';
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    // ── Detection ──────────────────────────────────────────────────────────
+    function toggleDetection() {
+      if (!running) startDetection();
+      else stopDetection();
+    }
+
+    function startDetection() {
+      running = true;
+      document.getElementById('detectBtn').classList.add('running');
+      document.getElementById('btnIcon').className = 'fa-solid fa-stop';
+      document.getElementById('btnText').textContent = 'Stop Detection';
+      document.getElementById('gestureBox').classList.add('active');
+      document.getElementById('gestureStatus').textContent = 'Detecting gestures…';
+
+      interval = setInterval(detectGesture, 2500);
+      detectGesture();
+    }
+
+    function stopDetection() {
+      running = false;
+      clearInterval(interval);
+      document.getElementById('detectBtn').classList.remove('running');
+      document.getElementById('btnIcon').className = 'fa-solid fa-play';
+      document.getElementById('btnText').textContent = 'Start Detection';
+      document.getElementById('gestureBox').classList.remove('active');
+      document.getElementById('gestureStatus').textContent = 'Click Start to begin detection';
+    }
+
+    async function detectGesture() {
+      try {
+        const resp = await fetch('/latest_prediction');
+        const data = await resp.json();
+
+        if (!data.text) return;
+
+        // ── FIX: only act when the server timestamp is new ────────────────
+        if (data.timestamp === lastTimestamp) return;
+        lastTimestamp = data.timestamp;
+
+        const isUnknown = (data.text === 'Unknown');
+
+        // Update unknown badge
+        document.getElementById('unknownBadge').classList.toggle('show', isUnknown);
+
+        if (isUnknown) {
+          // Show low confidence but don't add to sentence / speak
+          const pct = Math.round(data.confidence * 100);
+          document.getElementById('confPct').textContent = pct + '%';
+          const fill = document.getElementById('confFill');
+          fill.style.width = pct + '%';
+          fill.className = 'conf-fill low';
+          const out = document.getElementById('outputText');
+          out.textContent = '⚠ Unknown gesture';
+          out.className = 'output-text unknown';
+          return;
+        }
+
+        lastText = data.text;
+        lastLang = data.language;
+        count++;
+
+        // Update output display
+        const out = document.getElementById('outputText');
+        out.textContent = data.text;
+        out.className = 'output-text';
+
+        // Confidence bar
+        const pct  = Math.round(data.confidence * 100);
+        const fill = document.getElementById('confFill');
+        document.getElementById('confPct').textContent = pct + '%';
+        fill.style.width = pct + '%';
+        fill.className = 'conf-fill' + (pct < 70 ? ' low' : pct < 85 ? ' mid' : '');
+
+        // Stats
+        document.getElementById('statCount').textContent = count;
+        document.getElementById('statTime').textContent  = Math.round(data.response_time * 1000) + 'ms';
+        document.getElementById('statConf').textContent  = pct + '%';
+        document.getElementById('statLang').textContent  = data.language;
+
+        // Sentence builder (respects cooldown)
+        addToSentence(data.text);
+
+        // Speak
+        document.getElementById('speakBtn').disabled = false;
+        speakText(data.text, data.language);
+        document.getElementById('unknownBadge').classList.remove('show');
+
+      } catch (e) {
+        console.error("Fetch error:", e);
+      }
+    }
+
+    // ── TTS ────────────────────────────────────────────────────────────────
+    speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+
+    function speakText(text, language) {
+      const langMap    = { 'English': 'en-IN', 'Hindi': 'hi-IN', 'Marathi': 'mr-IN' };
+      const targetLang = langMap[language] || 'en-IN';
+      const voices     = speechSynthesis.getVoices();
+
+      let voice = voices.find(v => v.lang === targetLang)
+               || voices.find(v => v.lang.startsWith(targetLang.split('-')[0]))
+               || voices.find(v => v.lang.startsWith('en'));
+
+      const utter  = new SpeechSynthesisUtterance(text);
+      const rateMap = { slow: 0.6, normal: 0.9, fast: 1.3 };
+      utter.rate   = window.SGSettings ? rateMap[window.SGSettings.getSpeechRate()] || 0.9 : 0.9;
+      utter.volume = window.SGSettings ? window.SGSettings.getVolume() : 0.75;
+
+      if (voice) {
+        utter.voice = voice;
+        utter.lang  = voice.lang;
+      } else {
+        utter.lang = 'en-IN';
+      }
+
+      const warning = document.getElementById('voiceWarning');
+      if (voice && voice.lang !== targetLang) {
+        warning.textContent = '⚠️ No ' + language + ' voice found. Speaking in fallback language.';
+        warning.style.display = 'block';
+      } else {
+        warning.style.display = 'none';
+      }
+
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utter);
+    }
+
+    function speakOutput() {
+      if (lastText && lastText !== 'Unknown') speakText(lastText, lastLang);
+    }
+  </script>
+</body>
+</html>

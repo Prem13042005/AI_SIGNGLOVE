@@ -1,0 +1,130 @@
+
+.menu-toggle {
+  position: fixed; top: 16px; left: 16px;
+  font-size: 22px; cursor: pointer; z-index: 1001; color: #5a31f4;
+}
+.sidebar {
+  position: fixed; top: 0; left: -224px; height: 100%; width: 224px;
+  background: #fff; border-right: 1px solid #eee;
+  transition: left .3s; padding-top: 60px;
+  box-shadow: 2px 0 8px rgba(0,0,0,.08); z-index: 1000;
+}
+.menu-toggle:hover + .sidebar, .sidebar:hover { left: 0; }
+.menu-toggle:hover ~ .main, .sidebar:hover ~ .main { margin-left: 224px; }
+.nav { display: flex; flex-direction: column; }
+.nav a {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; color: #444; text-decoration: none;
+  transition: background .2s, color .2s; font-size: 14px;
+}
+.nav a i { color: #5a31f4; width: 18px; text-align: center; }
+.nav a:hover { background: #5a31f4; color: #fff; border-radius: 8px; }
+.nav a:hover i { color: #fff; }
+.nav a.active { background: #f0ebff; color: #5a31f4; border-radius: 8px; font-weight: 600; }
+.nav a.active i { color: #5a31f4; }
+
+/* ── DARK MODE — covers every dashboard page ── */
+body.dark-mode {
+  background: #0f0f1a !important;
+  color: #e0e0e0 !important;
+}
+
+/* Sidebar */
+body.dark-mode .sidebar        { background: #16213e !important; border-color: #2a2a4a !important; }
+body.dark-mode .nav a          { color: #ccc !important; }
+body.dark-mode .nav a.active   { background: #2a2a4a !important; color: #b39dff !important; }
+body.dark-mode .nav a:hover    { background: #5a31f4 !important; color: #fff !important; }
+
+/* Cards & containers */
+body.dark-mode .card,
+body.dark-mode .timeline,
+body.dark-mode .form-card,
+body.dark-mode .info-card,
+body.dark-mode .stat-box,
+body.dark-mode .stat-card,
+body.dark-mode .chart-card,
+body.dark-mode .highlight-card { background: #16213e !important; border-color: #2a2a4a !important; }
+
+/* Text */
+body.dark-mode .page-title,
+body.dark-mode .card-title,
+body.dark-mode .chart-title,
+body.dark-mode .entry-text,
+body.dark-mode .form-group label,
+body.dark-mode h1, body.dark-mode h2,
+body.dark-mode h3, body.dark-mode h4 { color: #e0e0e0 !important; }
+
+body.dark-mode .page-sub,
+body.dark-mode .entry-meta,
+body.dark-mode .lbl,
+body.dark-mode small { color: #888 !important; }
+
+/* Paragraphs — be selective, don't override everything */
+body.dark-mode .card p,
+body.dark-mode .info-card p,
+body.dark-mode .stat-card .lbl { color: #aaa !important; }
+
+/* Form elements */
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+  background: #1a1a2e !important;
+  color: #e0e0e0 !important;
+  border-color: #3a3a5a !important;
+}
+
+/* Specific component overrides */
+body.dark-mode .search-row      { background: #16213e !important; }
+body.dark-mode .action-btn      { background: #1e2a4a !important; color: #ccc !important; border-color: #2a2a4a !important; }
+body.dark-mode .gesture-box     { border-color: #3a3a5a !important; }
+body.dark-mode .gesture-box.active { background: #1e1a3e !important; }
+body.dark-mode .output-box      { border-color: #3a3a5a !important; }
+body.dark-mode .conf-bar,
+body.dark-mode .conf-track      { background: #2a2a4a !important; }
+body.dark-mode .entry           { border-color: #2a2a4a !important; }
+body.dark-mode .entry-icon      { background: #1e1a3e !important; }
+body.dark-mode .phrase-list li  { border-color: #2a2a4a !important; }
+body.dark-mode .hours-row       { border-color: #2a2a4a !important; }
+
+/* Settings page specific */
+body.dark-mode .setting         { border-color: #2a2a4a !important; }
+body.dark-mode .setting span    { color: #ccc !important; }
+body.dark-mode .main header     { background: #0f0f1a !important; border-color: #2a2a4a !important; }
+
+/* Simulator page */
+body.dark-mode .preset-btn      { background: #1a1a2e !important; color: #ccc !important; border-color: #3a3a5a !important; }
+body.dark-mode .preset-btn:hover,
+body.dark-mode .preset-btn.active { background: #5a31f4 !important; color: #fff !important; border-color: #5a31f4 !important; }
+body.dark-mode .finger-bar-wrap { background: #2a2a4a !important; border-color: #3a3a5a !important; }
+body.dark-mode .result-box      { border-color: #3a3a5a !important; }
+body.dark-mode .result-box.has-result { background: #1e1a3e !important; }
+body.dark-mode .top-preds th    { border-color: #2a2a4a !important; }
+body.dark-mode .top-preds td    { border-color: #2a2a4a !important; color: #ccc !important; }
+body.dark-mode .mini-bar-wrap   { background: #2a2a4a !important; }
+body.dark-mode .sensor-section-title { color: #666 !important; }
+
+/* Profile page badges */
+body.dark-mode .badge           { background: #2a2a4a !important; }
+body.dark-mode .phrase-count    { background: #2a2a4a !important; }
+body.dark-mode .conf-badge      { opacity: .85; }
+
+/* ── HIGH CONTRAST ── */
+body.high-contrast { filter: contrast(1.5) !important; }
+
+/* ── LARGE BUTTONS ── */
+body.large-buttons .detect-btn,
+body.large-buttons .predict-btn,
+body.large-buttons .save-btn,
+body.large-buttons .speak-btn,
+body.large-buttons .submit-btn,
+body.large-buttons button { font-size: 16px !important; padding: 13px 22px !important; }
+body.large-buttons .nav a  { font-size: 16px !important; padding: 15px 18px !important; }
+body.large-buttons .preset-btn { font-size: 14px !important; padding: 12px 10px !important; }
+
+/* ── REDUCED MOTION ── */
+body.reduced-motion *,
+body.reduced-motion *::before,
+body.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
+}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings | SignGlove AI</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+</head>
+<body>
+
+  {% include '_sidebar.html' %}
+
+  <!-- Toast notification -->
+  <div id="toast"></div>
+
+  <div class="main">
+    <header>
+      <h1><i class="fa-solid fa-gear" style="color:#5a31f4"></i> Settings</h1>
+      <div class="buttons">
+        <button id="resetBtn"><i class="fas fa-undo"></i> Reset</button>
+        <button id="saveBtn" class="save"><i class="fas fa-save"></i> Save Changes</button>
+      </div>
+    </header>
+
+    <section class="settings-container">
+
+      <!-- Theme & Display -->
+      <div class="card">
+        <h2><i class="fas fa-paint-brush"></i> Theme & Display</h2>
+        <div class="setting">
+          <span>Dark Mode</span>
+          <label class="switch">
+            <input type="checkbox" id="darkMode">
+            <span class="slider round"></span>
+          </label>
+        </div>
+        <div class="setting">
+          <span>High Contrast</span>
+          <label class="switch">
+            <input type="checkbox" id="highContrast">
+            <span class="slider round"></span>
+          </label>
+        </div>
+        
+      </div>
+
+     
+
+      
+
+      
+      
+
+      <!-- Privacy + Performance side by side -->
+      <div class="two-column">
+        <div class="card">
+          <h2><i class="fas fa-shield-alt"></i> Privacy & Security</h2>
+          <div class="setting">
+            <span>Data Collection</span>
+            <label class="switch">
+              <input type="checkbox" id="dataCollect" checked>
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="setting">
+            <span>Auto-save Translations</span>
+            <label class="switch">
+              <input type="checkbox" id="autoSave" checked>
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="setting">
+            <span>Offline Mode <small>(Beta)</small></span>
+            <label class="switch">
+              <input type="checkbox" id="offlineMode">
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2><i class="fas fa-tachometer-alt"></i> Performance</h2>
+          <div class="setting">
+            <span>Auto-optimize</span>
+            <label class="switch">
+              <input type="checkbox" id="autoOptimize" checked>
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="setting">
+            <span>Quality Mode</span>
+            <select id="qualityMode">
+              <option>Balanced</option>
+              <option>High Accuracy</option>
+              <option>High Speed</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+</body>
+</html>

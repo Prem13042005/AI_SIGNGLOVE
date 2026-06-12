@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics | SignGlove AI</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/Sidebar.css') }}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f5fb; color: #333; }
+    .main { margin-left: 60px; padding: 30px 28px; transition: margin-left .3s; }
+    .page-title { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+    .page-sub   { color: #888; font-size: 14px; margin-top: 4px; margin-bottom: 24px; }
+
+    .stat-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card {
+      background: #fff; border-radius: 14px; padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05); text-align: center;
+    }
+    .stat-card .icon { font-size: 22px; color: #5a31f4; margin-bottom: 8px; }
+    .stat-card .val  { font-size: 26px; font-weight: 800; color: #5a31f4; }
+    .stat-card .lbl  { font-size: 12px; color: #888; margin-top: 4px; }
+
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+    .chart-card  {
+      background: #fff; border-radius: 14px; padding: 22px 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    }
+    .chart-title {
+      font-size: 15px; font-weight: 700; color: #1a1a2e;
+      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+    }
+    .chart-title i { color: #5a31f4; }
+    canvas { max-height: 240px; }
+    .full-width { grid-column: span 2; }
+
+    /* Empty state for charts */
+    .empty-chart {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 160px; color: #bbb; font-size: 14px; gap: 10px;
+    }
+    .empty-chart i { font-size: 32px; }
+    .empty-chart a { color: #5a31f4; text-decoration: none; font-weight: 600; }
+
+    @media (max-width: 800px) {
+      .stat-row { grid-template-columns: 1fr 1fr; }
+      .charts-grid { grid-template-columns: 1fr; }
+      .full-width { grid-column: span 1; }
+      .main { margin-left: 0; padding: 20px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  {% include '_sidebar.html' %}
+
+  <div class="main">
+    <div class="page-title">Analytics</div>
+    <div class="page-sub">Your translation usage and accuracy trends</div>
+
+    <!-- Stat cards -->
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="icon"><i class="fa-solid fa-hand"></i></div>
+        <div class="val">{{ total }}</div>
+        <div class="lbl">Total Translations</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon"><i class="fa-solid fa-bullseye"></i></div>
+        <div class="val">{{ avg_conf }}%</div>
+        <div class="lbl">Avg Confidence</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon"><i class="fa-solid fa-bolt"></i></div>
+        <div class="val">{{ avg_rt }}ms</div>
+        <div class="lbl">Avg Response Time</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon"><i class="fa-solid fa-calendar-check"></i></div>
+        <div class="val">{{ days_active }}</div>
+        <div class="lbl">Days Active</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+
+      <!-- Top gestures bar chart -->
+      <div class="chart-card">
+        <div class="chart-title"><i class="fa-solid fa-chart-bar"></i> Top Gestures</div>
+        {% if gesture_counts %}
+          <canvas id="gestureChart"></canvas>
+        {% else %}
+          <div class="empty-chart">
+            <i class="fa-solid fa-chart-bar"></i>
+            No translation data yet.<br>
+            <a href="{{ url_for('live_translation') }}">Start translating</a> to see your top gestures.
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Language usage pie chart -->
+      <div class="chart-card">
+        <div class="chart-title"><i class="fa-solid fa-language"></i> Language Usage</div>
+        {% if lang_counts %}
+          <canvas id="langChart"></canvas>
+        {% else %}
+          <div class="empty-chart">
+            <i class="fa-solid fa-language"></i>
+            No language data yet.
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Confidence over time — with real timestamps on x-axis -->
+      <div class="chart-card full-width">
+        <div class="chart-title"><i class="fa-solid fa-chart-line"></i> Confidence Over Time (last 20 translations)</div>
+        {% if conf_over_time %}
+          <canvas id="confChart"></canvas>
+        {% else %}
+          <div class="empty-chart">
+            <i class="fa-solid fa-chart-line"></i>
+            No data yet — translate a few gestures to see your confidence trend.
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const isDark    = document.body.classList.contains('dark-mode');
+    const textColor = isDark ? '#ccc' : '#555';
+    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+
+    Chart.defaults.color       = textColor;
+    Chart.defaults.borderColor = gridColor;
+    Chart.defaults.font.family = "'Segoe UI', sans-serif";
+
+    // ── Top gestures bar chart ─────────────────────────────────────────────
+    const gestureData = {{ gesture_counts | tojson | safe }};
+    if (gestureData.length > 0) {
+      new Chart(document.getElementById('gestureChart'), {
+        type: 'bar',
+        data: {
+          labels:   gestureData.map(g => g[0]),
+          datasets: [{
+            label:           'Times used',
+            data:            gestureData.map(g => g[1]),
+            backgroundColor: 'rgba(90,49,244,0.7)',
+            borderColor:     '#5a31f4',
+            borderWidth:     1,
+            borderRadius:    6,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: gridColor } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    // ── Language usage doughnut chart ─────────────────────────────────────
+    const langData = {{ lang_counts | tojson | safe }};
+    if (langData.length > 0) {
+      new Chart(document.getElementById('langChart'), {
+        type: 'doughnut',
+        data: {
+          labels:   langData.map(l => l[0]),
+          datasets: [{
+            data:            langData.map(l => l[1]),
+            backgroundColor: ['#5a31f4', '#8c52ff', '#c4a8ff'],
+            borderWidth:     0,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom' } },
+          cutout: '60%',
+        }
+      });
+    }
+
+    // ── Confidence over time line chart — FIX: real timestamps on x-axis ──
+    const confData   = {{ conf_over_time | tojson | safe }};
+    const confLabels = {{ conf_time_labels | tojson | safe }};
+    if (confData.length > 0) {
+      new Chart(document.getElementById('confChart'), {
+        type: 'line',
+        data: {
+          labels:   confLabels,      // ← real date/time labels
+          datasets: [{
+            label:           'Confidence %',
+            data:            confData,
+            borderColor:     '#5a31f4',
+            backgroundColor: 'rgba(90,49,244,0.08)',
+            borderWidth:     2,
+            pointRadius:     3,
+            fill:            true,
+            tension:         0.4,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              min: 0, max: 100,
+              ticks: { callback: v => v + '%' },
+              grid: { color: gridColor }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { maxRotation: 45, font: { size: 11 } }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

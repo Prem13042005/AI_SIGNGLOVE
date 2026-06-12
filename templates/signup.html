@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account | SignGlove AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/signup.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <div class="signup-container">
+    <div class="logo">
+      <i class="fa-solid fa-hands fa-2x"></i>
+      <span>SignGlove AI</span>
+    </div>
+
+    <div class="signup-card">
+      <h2>Create your account</h2>
+      <p class="subtitle">Join the future of accessible communication</p>
+
+      {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+      {% endif %}
+
+      <!-- FIX: method POST + action + name attributes on every input -->
+      <form method="POST" action="{{ url_for('signup') }}">
+        <div class="input-row">
+          <div class="input-group">
+            <i class="fa-solid fa-user"></i>
+            <input type="text" name="first_name" placeholder="First Name" required>
+          </div>
+          <div class="input-group">
+            <i class="fa-solid fa-user"></i>
+            <input type="text" name="last_name" placeholder="Last Name" required>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <i class="fa-solid fa-envelope"></i>
+          <input type="email" name="email" placeholder="Email" required>
+        </div>
+
+        <div class="input-group">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" name="password" id="password" placeholder="Create a strong password" required>
+          <i class="fa-solid fa-eye toggle-password" data-target="password"></i>
+        </div>
+
+        <div class="input-group">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" name="confirm_password" id="confirmPassword" placeholder="Confirm your password" required>
+          <i class="fa-solid fa-eye toggle-password" data-target="confirmPassword"></i>
+        </div>
+
+        <!-- <p class="terms">
+          By creating an account, you agree to our
+          <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+        </p> -->
+
+        <button type="submit" class="btn">Create Account</button>
+      </form>
+
+      <p class="footer-text">
+        Already have an account? <a href="{{ url_for('signin') }}">Sign In</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/signup.js') }}"></script>
+</body>
+</html>
