@@ -7,10 +7,5 @@ pandas==2.3.0
 scikit-learn==1.7.0
 joblib==1.5.1
 
-pyserial==3.5
-
-matplotlib==3.10.3
-seaborn==0.13.2
-
 requests==2.32.4
 python-dotenv==1.1.1

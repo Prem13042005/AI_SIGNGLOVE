@@ -1,4 +1,4 @@
-import os, time, json
+import os, time, json, joblib
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, Response
 from flask_sqlalchemy import SQLAlchemy
@@ -6,10 +6,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # Flask config 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "ml", "gesture_model.pkl")
+model = joblib.load(MODEL_PATH)
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///signglove.db")
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
